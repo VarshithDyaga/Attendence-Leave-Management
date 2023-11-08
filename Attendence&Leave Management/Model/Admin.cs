@@ -1,40 +1,41 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace Attendence_Leave_Management.Model
 {
-    public class Admin:AdminLogin
+
+    public class Admin : AdminLoginModel
     {
         [Key]
-        public int AdminId { get; set; }
+        public int Id { get; set; }
 
         [Required]
-        public string FirstName { get; set; }
+        public string UserName { get; set; }
+
+        public string? Name { get; set; }
 
         [Required]
-        public string LastName { get; set; }
+        [EmailAddress]
 
-        [Required]
         public string Email { get; set; }
-
         [Required]
-        
         [DataType(DataType.Password)]
+
+
         public string Password { get; set; }
-
-
     }
-    public class AdminLogin
+
+    public class AdminLoginModel
     {
-        [Required] 
+        [Required]
         public string UserName { get; set; }
         [Required]
-       
-        
-        [DataType(DataType.Password)]
-
+        // [DataType(DataType.Password)]
 
         public string Password { get; set; }
     }
+
 
 }

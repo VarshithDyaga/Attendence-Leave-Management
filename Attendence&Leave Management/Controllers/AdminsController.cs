@@ -6,10 +6,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Attendence_Leave_Management.Model;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 namespace Attendence_Leave_Management.Controllers
 {
@@ -18,22 +14,20 @@ namespace Attendence_Leave_Management.Controllers
     public class AdminsController : ControllerBase
     {
         private readonly Attendance_Leave_Context _context;
-        private readonly IConfiguration _configuration;
 
-        public AdminsController(Attendance_Leave_Context context, IConfiguration configuration)
+        public AdminsController(Attendance_Leave_Context context)
         {
             _context = context;
-            _configuration = configuration;
         }
 
         // GET: api/Admins
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Admin>>> GetAdmin()
         {
-          if (_context.Admin == null)
-          {
-              return NotFound();
-          }
+            if (_context.Admin == null)
+            {
+                return NotFound();
+            }
             return await _context.Admin.ToListAsync();
         }
 
@@ -41,10 +35,10 @@ namespace Attendence_Leave_Management.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Admin>> GetAdmin(int id)
         {
-          if (_context.Admin == null)
-          {
-              return NotFound();
-          }
+            if (_context.Admin == null)
+            {
+                return NotFound();
+            }
             var admin = await _context.Admin.FindAsync(id);
 
             if (admin == null)
@@ -60,7 +54,7 @@ namespace Attendence_Leave_Management.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutAdmin(int id, Admin admin)
         {
-            if (id != admin.AdminId)
+            if (id != admin.Id)
             {
                 return BadRequest();
             }
@@ -91,14 +85,14 @@ namespace Attendence_Leave_Management.Controllers
         [HttpPost]
         public async Task<ActionResult<Admin>> PostAdmin(Admin admin)
         {
-          if (_context.Admin == null)
-          {
-              return Problem("Entity set 'Attendance_Leave_Context.Admin'  is null.");
-          }
+            if (_context.Admin == null)
+            {
+                return Problem("Entity set 'Attendance_Leave_Context.Admin'  is null.");
+            }
             _context.Admin.Add(admin);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetAdmin", new { id = admin.AdminId }, admin);
+            return CreatedAtAction("GetAdmin", new { id = admin.Id }, admin);
         }
 
         // DELETE: api/Admins/5
@@ -123,44 +117,24 @@ namespace Attendence_Leave_Management.Controllers
 
         private bool AdminExists(int id)
         {
-            return (_context.Admin?.Any(e => e.AdminId == id)).GetValueOrDefault();
+            return (_context.Admin?.Any(e => e.Id == id)).GetValueOrDefault();
         }
-        //AdminLogin Jwt Tokens
+
         [HttpPost]
         [Route("Login")]
-        public ActionResult Login([FromBody] AdminLogin adminLogin)
+        public ActionResult Login([FromBody] AdminLoginModel adminLogin)
         {
             var currentAdmin = _context.Admin.FirstOrDefault(x => x.UserName == adminLogin.UserName && x.Password == adminLogin.Password);
             if (currentAdmin == null)
             {
                 return NotFound("Invalid Username or password");
             }
-            var token = GenreateToken(currentAdmin);
+            var token = currentAdmin;
             if (token == null)
             {
                 return NotFound("Invalid Credentials");
             }
             return Ok(token);
-
         }
-        [NonAction]
-        public string GenreateToken(Admin admin)
-        {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:SecretKey"]));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha512);
-            var myClaims = new List<Claim>
-            {
-
-                new Claim(ClaimTypes.Name,admin.UserName),
-                new Claim(ClaimTypes.Email,admin.Email),
-            };
-            var token = new JwtSecurityToken(issuer: _configuration["JWT:issuer"],
-                                             audience: _configuration["JWT:audience"],
-                                             claims: myClaims,
-                                             expires: DateTime.Now.AddDays(1),
-                                             signingCredentials: credentials);
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
     }
 }
